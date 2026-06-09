@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Butler</title>
+    <style>
+        :root {
+            --bg-color: #333;
+            --surface-color: #222;
+            --surface-hover: #334155;
+            --accent-color: blue;
+            --accent-hover: #2563eb;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border-color: #475569;
+            --success-color: #10b981;
+            --error-color: #ef4444;
+            --font-family: arial;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 2rem;
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        p.subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+        }
+
+        /* Input Sections */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 768px) {
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .card h2 {
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        /* Drag and Drop Zone */
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            padding: 2rem 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: rgba(15, 23, 42, 0.5);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 160px;
+        }
+
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: var(--accent-color);
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+
+        .drop-zone input[type="file"] {
+            display: none;
+        }
+
+        .drop-zone-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            color: var(--accent-color);
+        }
+
+        /* URL Textarea */
+        textarea {
+            width: 100%;
+            min-height: 160px;
+            background-color: rgba(15, 23, 42, 0.5);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 1rem;
+            color: var(--text-primary);
+            font-family: monospace;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Buttons */
+        button {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        button:hover {
+            background-color: var(--accent-hover);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button.secondary {
+            background-color: var(--surface-hover);
+            border: 1px solid var(--border-color);
+        }
+
+        button.secondary:hover {
+            background-color: var(--border-color);
+        }
+
+        button.success {
+            background-color: var(--success-color);
+        }
+
+        button.success:hover {
+            background-color: #059669;
+        }
+
+        /* Action Bar */
+        .action-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--surface-color);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stats {
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+
+        /* Output Gallery */
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .image-card {
+            background-color: var(--surface-color);
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s ease;
+        }
+
+        .image-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+        }
+
+        .img-preview {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-bottom: 1px solid var(--border-color);
+            background-color: #000;
+        }
+
+        .img-preview-error {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 200px;
+            background-color: rgba(239, 68, 68, 0.1);
+            color: var(--error-color);
+            text-align: center;
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .image-card-content {
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            flex-grow: 1;
+        }
+
+        .data-url-input {
+            width: 100%;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .file-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Toast Notification */
+        #toast-container {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            z-index: 1000;
+        }
+
+        .toast {
+            background-color: var(--success-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            font-weight: 500;
+            animation: slideIn 0.3s ease forwards, fadeOut 0.3s ease 2.7s forwards;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .toast.error {
+            background-color: var(--error-color);
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @keyframes fadeOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        
+        /* Loading Overlay for URL fetching */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Image Butler</h1>
+        
+    </header>
+
+    <div class="container">
+        
+        <div class="controls-grid">
+            <div class="card">
+                <h2>Upload Local Images</h2>
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-zone-icon"></div>
+                    <p>Drag & drop images here</p>
+                    <p style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.25rem;">or click to browse</p>
+                    <input type="file" id="fileInput" multiple accept="image/*">
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Fetch Online URLs</h2>
+                <textarea id="urlInput" placeholder="Accepts lists separated by newlines, or commas."></textarea>
+                <button id="processUrlsBtn">
+                    <span>Process URLs</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <div class="stats">
+                Images processed: <span id="imageCount" style="color: white; font-weight: bold;">0</span>
+            </div>
+            <div style="display: flex; gap: 1rem;">
+                <button id="clearAllBtn" class="secondary">Clear All</button>
+                <button id="copyAllBtn" class="success">Copy All</button>
+            </div>
+        </div>
+
+        <div class="gallery" id="gallery">
+            </div>
+
+    </div>
+
+    <div id="toast-container"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const dropZone = document.getElementById('dropZone');
+            const fileInput = document.getElementById('fileInput');
+            const urlInput = document.getElementById('urlInput');
+            const processUrlsBtn = document.getElementById('processUrlsBtn');
+            const gallery = document.getElementById('gallery');
+            const imageCountSpan = document.getElementById('imageCount');
+            const copyAllBtn = document.getElementById('copyAllBtn');
+            const clearAllBtn = document.getElementById('clearAllBtn');
+            const toastContainer = document.getElementById('toast-container');
+
+            // Store encoded URLs for "Copy All"
+            let processedImages = [];
+
+            // --- Drag and Drop Logic ---
+            dropZone.addEventListener('click', () => fileInput.click());
+
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+            });
+
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+            });
+
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+            });
+
+            dropZone.addEventListener('drop', (e) => {
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            });
+
+            fileInput.addEventListener('change', function() {
+                handleFiles(this.files);
+                this.value = ''; // Reset input to allow selecting the same file again
+            });
+
+            // --- URL Processing Logic ---
+            processUrlsBtn.addEventListener('click', async () => {
+                // NEW PARSING LOGIC: 
+                // 1. Split by newlines OR commas
+                // 2. Globally replace single and double quotes
+                // 3. Trim whitespace
+                // 4. Filter out empty strings
+                const urls = urlInput.value
+                    .split(/[\n,]+/)
+                    .map(url => url.replace(/['"]/g, '').trim())
+                    .filter(url => url !== '');
+
+                if (urls.length === 0) {
+                    showToast('Please paste at least one URL.', 'error');
+                    return;
+                }
+
+                processUrlsBtn.innerHTML = '<div class="loading-spinner"></div> Processing...';
+                processUrlsBtn.disabled = true;
+
+                for (const url of urls) {
+                    await fetchAndEncodeUrl(url);
+                }
+
+                processUrlsBtn.innerHTML = '<span>Process URLs</span>';
+                processUrlsBtn.disabled = false;
+                urlInput.value = '';
+                showToast(`Processed ${urls.length} URLs!`);
+            });
+
+            // --- Global Action Buttons ---
+            copyAllBtn.addEventListener('click', () => {
+                if (processedImages.length === 0) {
+                    showToast('No Data URLs to copy!', 'error');
+                    return;
+                }
+                const allDataUrls = processedImages.map(img => img.dataUrl).join('\n');
+                copyToClipboard(allDataUrls, `Copied ${processedImages.length} Data URLs to clipboard!`);
+            });
+
+            clearAllBtn.addEventListener('click', () => {
+                gallery.innerHTML = '';
+                processedImages = [];
+                updateStats();
+                showToast('Gallery cleared.');
+            });
+
+            // --- Core Functions ---
+            function handleFiles(files) {
+                const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+                if (imageFiles.length === 0) {
+                    showToast('No valid image files detected.', 'error');
+                    return;
+                }
+
+                imageFiles.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const dataUrl = e.target.result;
+                        addCardToGallery(file.name, dataUrl, dataUrl);
+                    };
+                    reader.readAsDataURL(file);
+                });
+                
+                showToast(`Loaded ${imageFiles.length} file(s)!`);
+            }
+
+            async function fetchAndEncodeUrl(url) {
+                try {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    
+                    const blob = await response.blob();
+                    const reader = new FileReader();
+                    
+                    return new Promise((resolve) => {
+                        reader.onloadend = () => {
+                            const dataUrl = reader.result;
+                            const filename = url.substring(url.lastIndexOf('/') + 1) || 'Fetched Image';
+                            addCardToGallery(filename, dataUrl, dataUrl);
+                            resolve();
+                        };
+                        reader.readAsDataURL(blob);
+                    });
+                } catch (error) {
+                    console.error("Fetch Error:", error);
+                    createErrorCard(url, error.message);
+                }
+            }
+
+            // --- UI Rendering ---
+            function addCardToGallery(title, displaySrc, dataUrl) {
+                const card = document.createElement('div');
+                card.className = 'image-card';
+                
+                processedImages.push({ title, dataUrl });
+                updateStats();
+
+                card.innerHTML = `
+                    <img src="${displaySrc}" alt="${title}" class="img-preview" loading="lazy">
+                    <div class="image-card-content">
+                        <div class="file-name" title="${title}">${title}</div>
+                        <input type="text" class="data-url-input" value="${dataUrl}" readonly>
+                        <button class="copy-btn">Copy Data URL</button>
+                    </div>
+                `;
+
+                const copyBtn = card.querySelector('.copy-btn');
+                const inputField = card.querySelector('.data-url-input');
+
+                inputField.addEventListener('click', () => inputField.select());
+                
+                copyBtn.addEventListener('click', () => {
+                    copyToClipboard(dataUrl, 'Data URL copied to clipboard!');
+                    
+                    const originalText = copyBtn.innerText;
+                    copyBtn.innerText = '✓ Copied!';
+                    copyBtn.classList.add('success');
+                    setTimeout(() => {
+                        copyBtn.innerText = originalText;
+                        copyBtn.classList.remove('success');
+                    }, 2000);
+                });
+
+                gallery.prepend(card);
+            }
+
+            function createErrorCard(url, errorMessage) {
+                const card = document.createElement('div');
+                card.className = 'image-card';
+                
+                card.innerHTML = `
+                    <div class="img-preview-error">
+                        <div>
+                            <strong>Fetch Failed (CORS or Network)</strong>
+                            <div style="font-size: 0.8rem; margin-top: 0.5rem; word-break: break-all;">${url}</div>
+                        </div>
+                    </div>
+                    <div class="image-card-content">
+                        <div class="file-name" style="color: var(--error-color)">Error</div>
+                        <input type="text" class="data-url-input" value="${errorMessage}" readonly style="border-color: var(--error-color); color: var(--error-color)">
+                        <button class="secondary" disabled>Cannot Copy</button>
+                    </div>
+                `;
+                gallery.prepend(card);
+                showToast(`Failed to fetch: ${url.substring(0, 30)}...`, 'error');
+            }
+
+            // --- Utilities ---
+            function updateStats() {
+                imageCountSpan.innerText = processedImages.length;
+            }
+
+            async function copyToClipboard(text, successMessage) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    showToast(successMessage);
+                } catch (err) {
+                    console.error('Failed to copy text: ', err);
+                    
+                    const textArea = document.createElement("textarea");
+                    textArea.value = text;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        showToast(successMessage);
+                    } catch (e) {
+                        showToast('Copy failed. Your browser might block this.', 'error');
+                    }
+                    document.body.removeChild(textArea);
+                }
+            }
+
+            function showToast(message, type = 'success') {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                const icon = type === 'success' ? '' : '';
+                toast.innerHTML = `<span>${icon}</span> <span>${message}</span>`;
+                
+                toastContainer.appendChild(toast);
+
+                setTimeout(() => {
+                    if(toast.parentNode) {
+                        toastContainer.removeChild(toast);
+                    }
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
